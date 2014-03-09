@@ -317,7 +317,17 @@ public abstract class NanoHTTPD {
      * @return HTTP response, see class Response for details
      */
     public Response serve(IHTTPSession session) {
-        Map<String, String> files = new HashMap<String, String>();
+        return serve(session.getUri(), session.getMethod(), session.getHeaders(), session.getParms(), session.getFiles());
+    }
+
+    /**
+     * Do a bunch of book keeping and request processing before handing off to the
+     * serve method for final handling.
+     *
+     * @param session The request session we're dealing with.
+     * @return The response from serve().
+     */
+    private Response serveInternal(IHTTPSession session) {
         Method method = session.getMethod();
         if (Method.PUT.equals(method) || Method.POST.equals(method)) {
             try {
@@ -331,7 +341,7 @@ public abstract class NanoHTTPD {
 
         Map<String, String> parms = session.getParms();
         parms.put(QUERY_STRING_PARAMETER, session.getQueryParameterString());
-        return serve(session.getUri(), method, session.getHeaders(), parms, files);
+        return serve(session);
     }
 
     /**
@@ -369,7 +379,7 @@ public abstract class NanoHTTPD {
      * supplied several times, by return lists of values.  In general these lists will contain a single
      * element.
      *
-     * @param parms original <b>NanoHttpd</b> parameters values, as passed to the <code>serve()</code> method.
+     * @param parms original <b>NanoHttpd</b> parameters values, as passed to the <code>serveInternal()</code> method.
      * @return a map of <code>String</code> (parameter name) to <code>List&lt;String&gt;</code> (a list of the values supplied).
      */
     protected Map<String, List<String>> decodeParameters(Map<String, String> parms) {
@@ -939,8 +949,8 @@ public abstract class NanoHTTPD {
 
                 cookies = new CookieHandler(headers);
 
-                // Ok, now do the serve()
-                Response r = serve(this);
+                // Ok, now do the serveInternal()
+                Response r = serveInternal(this);
                 if (r == null) {
                     throw new ResponseException(Response.Status.INTERNAL_ERROR, "SERVER INTERNAL ERROR: Serve() returned a null response.");
                 } else {
