@@ -164,12 +164,25 @@ public abstract class NanoHTTPD {
      * @throws IOException if the socket is in use.
      */
     public void start() throws IOException {
-        myServerSocket = new ServerSocket();
-        myServerSocket.bind((hostname != null) ? new InetSocketAddress(hostname, myPort) : new InetSocketAddress(myPort));
+        if (myThread != null) {
+            return;
+        }
+
+        final Object monitor = new Object();
 
         myThread = new Thread(new Runnable() {
             @Override
             public void run() {
+                try {
+                    myServerSocket = getServerSocket();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                synchronized (monitor) {
+                    monitor.notify();
+                }
+
                 do {
                     try {
                         final Socket finalAccept = myServerSocket.accept();
@@ -206,9 +219,18 @@ public abstract class NanoHTTPD {
                 } while (!myServerSocket.isClosed());
             }
         });
-        myThread.setDaemon(true);
-        myThread.setName("NanoHttpd Main Listener");
-        myThread.start();
+
+        synchronized (monitor) {
+            myThread.setDaemon(true);
+            myThread.setName("NanoHttpd Main Listener");
+            myThread.start();
+
+            try {
+                monitor.wait();
+            } catch (InterruptedException e) {
+                // Shouldn't happen... in theory...
+            }
+        }
     }
 
     /**
@@ -219,6 +241,8 @@ public abstract class NanoHTTPD {
             safeClose(myServerSocket);
             closeAllConnections();
             myThread.join();
+
+            myThread = null;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -308,6 +332,21 @@ public abstract class NanoHTTPD {
         Map<String, String> parms = session.getParms();
         parms.put(QUERY_STRING_PARAMETER, session.getQueryParameterString());
         return serve(session.getUri(), method, session.getHeaders(), parms, files);
+    }
+
+    /**
+     * Server socket factory method.  This is broken out to make it possible for
+     * inheritors of this class to provide their own socket logic.
+     *
+     * @return A newly bound ServerSocket instance.
+     * @throws IOException
+     */
+    protected ServerSocket getServerSocket() throws IOException {
+        ServerSocket socket = new ServerSocket();
+
+        socket.bind((hostname != null) ? new InetSocketAddress(hostname, myPort) : new InetSocketAddress(myPort));
+
+        return socket;
     }
 
     /**
