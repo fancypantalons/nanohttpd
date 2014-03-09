@@ -302,7 +302,7 @@ public abstract class NanoHTTPD {
      * @return HTTP response, see class Response for details
      */
     @Deprecated
-    public Response serve(String uri, Method method, Map<String, String> headers, Map<String, String> parms,
+    public Response serve(String uri, Method method, Map<String, String> headers, Map<String, Object> parms,
                                    Map<String, String> files) {
         return new Response(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Not Found");
     }
@@ -339,7 +339,7 @@ public abstract class NanoHTTPD {
             }
         }
 
-        Map<String, String> parms = session.getParms();
+        Map<String, Object> parms = session.getParms();
         parms.put(QUERY_STRING_PARAMETER, session.getQueryParameterString());
         return serve(session);
     }
@@ -835,7 +835,7 @@ public abstract class NanoHTTPD {
     public interface IHTTPSession {
         void execute() throws IOException;
 
-        Map<String, String> getParms();
+        Map<String, Object> getParms();
 
         Map<String, String> getHeaders();
 
@@ -866,7 +866,7 @@ public abstract class NanoHTTPD {
         private int rlen;
         private String uri;
         private Method method;
-        private Map<String, String> parms;
+        private Map<String, Object> parms;
         private Map<String, String> headers;
         private Map<String, String> files;
         private CookieHandler cookies;
@@ -929,7 +929,7 @@ public abstract class NanoHTTPD {
                     inputStream.unread(buf, splitbyte, rlen - splitbyte);
                 }
 
-                parms = new HashMap<String, String>();
+                parms = new HashMap<String, Object>();
                 if(null == headers) {
                     headers = new HashMap<String, String>();
                 }
@@ -1068,7 +1068,7 @@ public abstract class NanoHTTPD {
         /**
          * Decodes the sent headers and loads the data into Key/value pairs
          */
-        private void decodeHeader(BufferedReader in, Map<String, String> pre, Map<String, String> parms, Map<String, String> headers)
+        private void decodeHeader(BufferedReader in, Map<String, String> pre, Map<String, Object> parms, Map<String, String> headers)
             throws ResponseException {
             try {
                 // Read the request line
@@ -1122,7 +1122,7 @@ public abstract class NanoHTTPD {
         /**
          * Decodes the Multipart Body data and put it into Key/Value pairs.
          */
-        private void decodeMultipartData(String boundary, ByteBuffer fbuf, BufferedReader in, Map<String, String> parms,
+        private void decodeMultipartData(String boundary, ByteBuffer fbuf, BufferedReader in, Map<String, Object> parms,
                                          Map<String, String> files) throws ResponseException {
             try {
                 int[] bpositions = getBoundaryPositions(fbuf, boundary.getBytes());
@@ -1288,7 +1288,7 @@ public abstract class NanoHTTPD {
          * Decodes parameters in percent-encoded URI-format ( e.g. "name=Jack%20Daniels&pass=Single%20Malt" ) and
          * adds them to given Map. NOTE: this doesn't support multiple identical keys due to the simplicity of Map.
          */
-        private void decodeParms(String parms, Map<String, String> p) {
+        private void decodeParms(String parms, Map<String, Object> p) {
             if (parms == null) {
                 queryParameterString = "";
                 return;
@@ -1309,7 +1309,7 @@ public abstract class NanoHTTPD {
         }
 
         @Override
-        public final Map<String, String> getParms() {
+        public final Map<String, Object> getParms() {
             return parms;
         }
 
