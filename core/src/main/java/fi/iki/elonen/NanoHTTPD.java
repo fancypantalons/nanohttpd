@@ -345,6 +345,18 @@ public abstract class NanoHTTPD {
     }
 
     /**
+     * Custom request body parsing.  This is called during the response processing
+     * if a POST body is detected that has an unrecognized content-type.  Overriding
+     * this can be useful for processing other body types (eg, JSON).
+     *
+     * @param session The current HTTP session.
+     * @param contentType The content type in the request header.
+     * @param in A reader for the request body.
+     */
+    protected void parseBody(HTTPSession session, String contentType, BufferedReader in) {
+    }
+
+    /**
      * Server socket factory method.  This is broken out to make it possible for
      * inheritors of this class to provide their own socket logic.
      *
@@ -1040,7 +1052,7 @@ public abstract class NanoHTTPD {
                         }
 
                         decodeMultipartData(boundary, fbuf, in, parms, files);
-                    } else {
+                    } else if ("application/x-www-form-urlencoded".equalsIgnoreCase(contentType)) {
                         // Handle application/x-www-form-urlencoded
                         String postLine = "";
                         StringBuilder postLineBuffer = new StringBuilder();
@@ -1053,6 +1065,8 @@ public abstract class NanoHTTPD {
                         }
                         postLine = postLineBuffer.toString().trim();
                         decodeParms(postLine, parms);
+                    } else {
+                        NanoHTTPD.this.parseBody(this, contentType, in);
                     }
                 } else if (Method.PUT.equals(method)) {
                     files.put("content", saveTmpFile(fbuf, 0, fbuf.limit()));
