@@ -329,7 +329,7 @@ public abstract class NanoHTTPD {
      */
     private Response serveInternal(IHTTPSession session) {
         Method method = session.getMethod();
-        if (Method.PUT.equals(method) || Method.POST.equals(method)) {
+        if (Method.PUT.equals(method) || Method.POST.equals(method) || Method.DELETE.equals(method)) {
             try {
                 session.parseBody();
             } catch (IOException ioe) {
@@ -1026,7 +1026,7 @@ public abstract class NanoHTTPD {
 
                 // If the method is POST, there may be parameters
                 // in data section, too, read it:
-                if (Method.POST.equals(method)) {
+                if (Method.POST.equals(method) || Method.DELETE.equals(method)) {
                     String contentType = "";
                     String contentTypeHeader = headers.get("content-type");
 
