@@ -1022,7 +1022,7 @@ public abstract class NanoHTTPD {
 
                 // Create a BufferedReader for easily reading it as string.
                 InputStream bin = new FileInputStream(randomAccessFile.getFD());
-                in = new BufferedReader(new InputStreamReader(bin));
+                in = new BufferedReader(new InputStreamReader(bin, "UTF-8"));
 
                 // If the method is POST, there may be parameters
                 // in data section, too, read it:
