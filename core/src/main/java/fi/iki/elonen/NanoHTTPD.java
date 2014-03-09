@@ -331,7 +331,7 @@ public abstract class NanoHTTPD {
         Method method = session.getMethod();
         if (Method.PUT.equals(method) || Method.POST.equals(method)) {
             try {
-                session.parseBody(files);
+                session.parseBody();
             } catch (IOException ioe) {
                 return new Response(Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, "SERVER INTERNAL ERROR: IOException: " + ioe.getMessage());
             } catch (ResponseException re) {
@@ -839,6 +839,8 @@ public abstract class NanoHTTPD {
 
         Map<String, String> getHeaders();
 
+        Map<String, String> getFiles();
+
         /**
          * @return the path part of the URL.
          */
@@ -852,11 +854,7 @@ public abstract class NanoHTTPD {
 
         CookieHandler getCookies();
 
-        /**
-         * Adds the files in the request body to the files map.
-         * @arg files - map to modify
-         */
-        void parseBody(Map<String, String> files) throws IOException, ResponseException;
+        Map<String, String> parseBody() throws IOException, ResponseException;
     }
 
     protected class HTTPSession implements IHTTPSession {
@@ -870,6 +868,7 @@ public abstract class NanoHTTPD {
         private Method method;
         private Map<String, String> parms;
         private Map<String, String> headers;
+        private Map<String, String> files;
         private CookieHandler cookies;
         private String queryParameterString;
 
@@ -888,6 +887,8 @@ public abstract class NanoHTTPD {
 
             headers.put("remote-addr", remoteIp);
             headers.put("http-client-ip", remoteIp);
+
+            files = new HashMap<String, String>();
         }
 
         @Override
@@ -977,7 +978,7 @@ public abstract class NanoHTTPD {
         }
 
         @Override
-        public void parseBody(Map<String, String> files) throws IOException, ResponseException {
+        public Map<String, String> parseBody() throws IOException, ResponseException {
             RandomAccessFile randomAccessFile = null;
             BufferedReader in = null;
             try {
@@ -1060,6 +1061,8 @@ public abstract class NanoHTTPD {
                 safeClose(randomAccessFile);
                 safeClose(in);
             }
+
+            return files;
         }
 
         /**
@@ -1337,6 +1340,11 @@ public abstract class NanoHTTPD {
         @Override
         public CookieHandler getCookies() {
             return cookies;
+        }
+
+        @Override
+        public Map<String, String> getFiles() {
+            return files;
         }
     }
 
