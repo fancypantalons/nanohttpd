@@ -1180,11 +1180,15 @@ public abstract class NanoHTTPD {
                                 if (mpline != null) {
                                     int d = mpline.indexOf(boundary);
                                     if (d == -1) {
-                                        value += mpline;
+                                        value += mpline + "\r\n";
                                     } else {
                                         value += mpline.substring(0, d - 2);
                                     }
                                 }
+                            }
+
+                            if (value.lastIndexOf("\r\n") == value.length() - 2) {
+                                value = value.substring(0, value.length() - 2);
                             }
                         } else {
                             if (boundarycount > bpositions.length) {
